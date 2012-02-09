@@ -1,0 +1,46 @@
+require 'rake'
+
+task :default => :compile_templates
+
+task :clean_compiled_files do
+    if File.exist?('release.js')
+        File.unlink('release.js')
+    end
+    
+    if File.exist?('style.css')
+        File.unlink('style.css')
+    end
+
+end
+
+task :compile_sass => :clean_compiled_files do
+    system("sass css/style.scss ./style.css")
+    puts "compiled stylesheets"
+end
+
+task :compile_js => :clean_compiled_files do
+    out = ""
+    Dir['js/*'].sort.each do |file|
+        out += File.read(file)
+    end
+
+    File.open("release.js", 'a') { |file|
+        file.write(out)
+    }
+    puts "done concatenating files"
+end
+
+task :compile_templates => [:compile_js, :compile_sass] do
+    templates = ""
+    Dir['templates/*'].each do |file|
+        templates += "Minitape." + File.basename(file).split(".")[0] + "_template = \"" + File.read(file).gsub("\n", "") + "\";"
+    end
+    
+    File.open("release.js", 'a') { |file|
+        file.write(templates)
+    }
+
+    puts "done compiling templates"
+end
+
+
